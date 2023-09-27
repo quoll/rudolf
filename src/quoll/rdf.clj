@@ -65,6 +65,8 @@
 
 (def XSD-STRING (curie common-prefixes :xsd/string))
 (def XSD-INTEGER (curie common-prefixes :xsd/integer))
+(def XSD-LONG (curie common-prefixes :xsd/long))
+(def XSD-FLOAT (curie common-prefixes :xsd/float))
 (def XSD-DATE (curie common-prefixes :xsd/date))
 (def XSD-QNAME (curie common-prefixes :xsd/QName))
 (def XSD-BOOLEAN (curie common-prefixes :xsd/boolean))
@@ -97,6 +99,7 @@
    (cond
      (string? value) (->TypedLiteral value XSD-STRING)
      (int? value) (->TypedLiteral (str value) XSD-INTEGER)
+     (float? value) (->TypedLiteral (str value) XSD-FLOAT)
      (instance? Date value) (->TypedLiteral (str value) XSD-DATE)
      (keyword? value) (->TypedLiteral (str (namespace value) \: (name value)) XSD-QNAME)
      (boolean? value) (->TypedLiteral (str value) XSD-BOOLEAN)
