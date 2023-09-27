@@ -1,6 +1,6 @@
-(ns quoll.rdf.rudolf-test
+(ns quoll.rdf-test
   (:require [clojure.test :refer [testing is deftest]]
-            [quoll.rdf.rudolf :refer [iri as-str lang-literal typed-literal blank-node unsafe-blank-node]]))
+            [quoll.rdf :refer [iri as-str lang-literal typed-literal blank-node unsafe-blank-node]]))
 
 (deftest test-iri
   (testing "do IRIs serialize as expected"

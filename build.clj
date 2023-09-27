@@ -4,7 +4,7 @@
             [org.corfield.build :as bb]))
 
 (def lib 'org.clojars.quoll/rudolf)
-(def version "0.0.1")
+(def version "0.1.0")
 
 ;; clojure -T:build test
 (defn test "Run the tests." [opts]
