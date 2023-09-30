@@ -78,17 +78,32 @@
     (:iri u)
     (str u)))
 
+(def echar-map {\newline "\\n"
+                \return "\\r"
+                \tab "\\t"
+                \formfeed "\\f"
+                \backspace "\\b"
+                \" "\\\""
+                \\ "\\\\"})
+
+(defn print-escape
+  "Escapes a string for printing"
+  [s]
+  (-> s
+      (s/replace #"[\n\r\t\f\"\\]" #(echar-map (first %)))
+      (s/replace "\b" "\\b")))
+
 (defrecord TypedLiteral [value datatype]
   Object
   (toString [this]
     (if (and datatype (not= datatype XSD-STRING))
-      (str \" value "\"^^" datatype)
-      (str \" value \"))))
+      (str \" (print-escape value) "\"^^" datatype)
+      (str \" (print-escape value) \"))))
 
 (defrecord LangLiteral [value lang]
   Object
   (toString [this]
-    (str \" value "\"@" lang)))
+    (str \" (print-escape value) "\"@" lang)))
 
 (defn lang-literal
   [value lang]
@@ -121,10 +136,10 @@
 
 (let [counter (atom 0)]
   (def ^:private labelled-blank-node
-    (memoize (fn [label] (->BlankNode (swap! counter inc)))))
+    (memoize (fn [label] (->BlankNode (str \b (swap! counter inc))))))
 
   (defn blank-node
-    ([] (->BlankNode (swap! counter inc)))
+    ([] (->BlankNode (str \b (swap! counter inc))))
     ([label]
      (labelled-blank-node (if (s/starts-with? label "_:") (subs label 2) label)))))
 
