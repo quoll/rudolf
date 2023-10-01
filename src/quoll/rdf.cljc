@@ -4,7 +4,7 @@
   (:require [clojure.string :as s]
             #?(:clj [clojure.instant :as inst]
                :cljs [cljs.reader :as r]))
-  ?#(:clj (:import [java.io Writer]
+  #?(:clj (:import [java.io Writer]
                    [clojure.lang IPersistentCollection IPersistentMap IHashEq]
                    [java.util Date]
                    [java.net URL URI])))
@@ -74,7 +74,7 @@
                                    not-found))
      IPrintWithWriter
      (-pr-writer [this writer opts]
-       (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts)))))
+       (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))))
 
 (defn iri
   "Create an iri. If no prefix/namespace is available, then the prefix and local values may be nil.
