@@ -7,7 +7,8 @@
   #?(:clj (:import [java.io Writer]
                    [clojure.lang IPersistentCollection IPersistentMap IHashEq]
                    [java.util Date]
-                   [java.net URL URI])))
+                   [java.net URL URI]
+                   [java.text DateFormat])))
 
 (def common-prefixes
   "Common prefixes used in many datasets"
@@ -121,7 +122,7 @@
   This means that the raw IRI is returned, and not an abbreviated form, nor is it wrapped in angle brackets."
   [u]
   (if (instance? IRI u)
-    #?(:clj (:iri u) (.-iri u))
+    #?(:clj (:iri u) :cljs (.-iri u))
     (str u)))
 
 (def echar-map {\newline "\\n"
@@ -156,6 +157,28 @@
   [value lang]
   (->LangLiteral value lang))
 
+#?(:clj
+   (defn- inst-str
+     [i]
+     (let [^DateFormat fmt (.get (deref #'inst/thread-local-utc-date-format))]
+       (.format fmt i)))
+   :cljs
+   (let [normalize (fn [n len]
+                     (loop [ns (str n)]
+                       (if (< (count ns) len)
+                         (recur (str "0" ns))
+                         ns)))]
+     (defn- inst-str
+       [i]
+       (str
+        (normalize (.getUTCFullYear i) 4)     "-"
+        (normalize (inc (.getUTCMonth i)) 2)  "-"
+        (normalize (.getUTCDate i) 2)         "T"
+        (normalize (.getUTCHours i) 2)        ":"
+        (normalize (.getUTCMinutes i) 2)      ":"
+        (normalize (.getUTCSeconds i) 2)      "."
+        (normalize (.getUTCMilliseconds i) 3) "-00:00"))))
+
 (defn typed-literal
   "Converts a Clojure value into an RDF Literal. The datatype will be inferred if none is available."
   ([value]
@@ -163,7 +186,7 @@
      (string? value) (->TypedLiteral value XSD-STRING)
      (int? value) (->TypedLiteral (str value) XSD-INTEGER)
      (float? value) (->TypedLiteral (str value) XSD-FLOAT)
-     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (str value) XSD-DATE)
+     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATE)
      (keyword? value) (->TypedLiteral (str (namespace value) \: (name value)) XSD-QNAME)
      (boolean? value) (->TypedLiteral (str value) XSD-BOOLEAN)
      (uri? value) (->TypedLiteral (str value) XSD-ANYURI)
@@ -173,9 +196,9 @@
   ([value datatype]
    (let [dt (cond
               (instance? IRI datatype) datatype
-              (string? datatype) (->IRI datatype)
+              (string? datatype) (->IRI datatype nil nil)
               #?(:clj (or (instance? URL datatype) (uri? datatype))
-                 :cljs (uri? datatype)) (->IRI (str datatype)))]
+                 :cljs (uri? datatype)) (->IRI (str datatype) nil nil))]
    (->TypedLiteral value dt))))
 
 (defn to-clj
@@ -189,8 +212,9 @@
       "http://www.w3.org/2001/XMLSchema#float" (parse-double value)
       "http://www.w3.org/2001/XMLSchema#date" #?(:clj (inst/read-instant-timestamp value)
                                                  :cljs (r/parse-timestamp value))
+      "http://www.w3.org/2001/XMLSchema#QName" (apply keyword (s/split value #":" 2))
       "http://www.w3.org/2001/XMLSchema#boolean" (parse-boolean value)
-      "http://www.w3.org/2001/XMLSchema#uri" #?(:clj (URI. value)
+      "http://www.w3.org/2001/XMLSchema#anyURI" #?(:clj (URI. value)
                                                 :cljs (goog.Uri. value))
       literal)))
 
