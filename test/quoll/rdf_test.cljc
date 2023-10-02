@@ -3,12 +3,21 @@
             [clojure.string :as s]
             [quoll.rdf :as r :refer [iri as-str lang-literal typed-literal
                                      blank-node unsafe-blank-node to-clj]])
-  #?(:clj (:import [java.net URI])))
+  #?(:clj (:import [java.net URI]
+                   [clojure.lang ExceptionInfo])))
+
+#?(:clj (defn uri [s] (URI. s))
+   :cljs (defn uri [s] (goog.Uri. s)))
 
 (deftest test-iri
   (testing "do IRIs serialize as expected"
     (is (= "<http://test.com/>" (str (iri "http://test.com/"))))
-    (is (= "tst:local" (str (iri "http://test.com/local" "tst" "local"))))))
+    (is (= "<http://test.com/>" (str (iri (uri "http://test.com/")))))
+    (is (= "tst:local" (str (iri "http://test.com/local" "tst" "local"))))
+    (is (thrown? ExceptionInfo (iri "http://test.com/locals" "tst" "local")))
+    (is (= "tst:local" (str (iri "http://test.com/local" :tst/local))))
+    (is (= "tst:local" (str (iri {:tst "http://test.com/"} :tst/local))))
+    (is (= "http://test.com/local" (as-str (iri {:tst "http://test.com/"} :tst/local))))))
 
 (deftest test-typed-literals
   (testing "do TypedLiterals serialize as expected"
@@ -39,9 +48,6 @@
      (is (s/starts-with? (str b5) "_:b")))
     (is (= "_:b1" (str (unsafe-blank-node "b1"))))
     (is (= "_:b2" (str (unsafe-blank-node "_:b2"))))))
-
-#?(:clj (defn uri [s] (URI. s))
-   :cljs (defn uri [s] (goog.Uri. s)))
 
 (deftest test-autotyping
   (testing "Conversion of data into Literals"

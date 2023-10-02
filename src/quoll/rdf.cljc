@@ -79,12 +79,27 @@
 
 (defn iri
   "Create an iri. If no prefix/namespace is available, then the prefix and local values may be nil.
-  The full form of the IRI must always be available."
+  The full form of the IRI must always be available.
+  (iri i): uses i as a full IRI string. Prefix and local are nil.
+  (iri ctx p l): ctx is a map of prefixes as keywords to namespace strings.
+                 p and l are the prefix and local values for the iri.
+                 The keyword for p must appear as a key in the ctx map.
+  (iri i p l): i is the full IRI string for the IRI, and p and l are the
+               prefix:local pair for the CURIE form. l must match the tail of the IRI."
   ([i] (if (instance? IRI i) i (->IRI i nil nil)))
+  ([i kw]
+   (iri i (namespace kw) (name kw)))
   ([i p l]
-   (if (s/ends-with? i l)
-     (->IRI i p l)
-     (throw (ex-info "Local part of the IRI does not match the full IRI" {:iri i :local l})))))
+   (if (map? i)
+     (if-let [nms (if p
+                    (get i (keyword p))
+                    (or (get i "") (get i nil) (get i (keyword ""))))]
+       (->IRI (str nms l) p l)
+       (throw (ex-info (str "Prefix '" p "' not found in context") {:context i :prefix p :local l})))
+     (let [i (str i)]
+       (if (s/ends-with? i l)
+         (->IRI i p l)
+         (throw (ex-info "Local part of the IRI does not match the full IRI" {:iri i :local l})))))))
 
 (defn curie
   "Create an IRI in Compact URI form, based on a keyword namespace/name.
