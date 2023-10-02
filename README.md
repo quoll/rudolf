@@ -5,15 +5,15 @@ RDF datatypes.
 ## Usage
 ### Leiningen/Boot
 ```clojure
-[org.clojars.quoll/rudolf "0.1.2"]
+[org.clojars.quoll/rudolf "0.1.3"]
 ```
 
 ### Clojure CLI/deps.edn
 ```clojure
-org.clojars.quoll/rudolf {:mvn/version "0.1.2"}
+org.clojars.quoll/rudolf {:mvn/version "0.1.3"}
 ```
 
-The namespace contains basic RDF datatypes, for portable use in other applications.
+The namespace contains basic RDF datatypes, for portable use in other Clojure or ClojureScript applications.
 
 ```clojure
 (:require '[quoll.rdf as rdf :refer [iri curie lang-literal typed-literal]])
