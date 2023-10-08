@@ -107,8 +107,8 @@
   or else a context map containing the prefix must be provided."
   ([kw] (curie common-prefixes kw))
   ([context kw]
-   (let [pref (keyword (namespace kw))
-         prefix (or pref :default)
+   (let [pref (namespace kw)
+         prefix (if pref (keyword pref) :default)
          nms (get context prefix)]
      (when-not nms
        (throw (ex-info (str "Namespace for " prefix " must be provided in the context")
@@ -122,15 +122,19 @@
                        {:prefix prefix :context context})))
      (->IRI (str nms local) prefix local))))
 
+(def xsd [:xsd/string :xsd/integer :xsd/long :xsd/float :xsd/date
+          :xsd/QName :xsd/boolean :xsd/anyURI])
 
-(def XSD-STRING (curie common-prefixes :xsd/string))
-(def XSD-INTEGER (curie common-prefixes :xsd/integer))
-(def XSD-LONG (curie common-prefixes :xsd/long))
-(def XSD-FLOAT (curie common-prefixes :xsd/float))
-(def XSD-DATE (curie common-prefixes :xsd/date))
-(def XSD-QNAME (curie common-prefixes :xsd/QName))
-(def XSD-BOOLEAN (curie common-prefixes :xsd/boolean))
-(def XSD-ANYURI (curie common-prefixes :xsd/anyURI))
+(def known-types (reduce #(assoc %1 %2 (curie common-prefixes %2)) {} xsd))
+
+(def XSD-STRING (known-types :xsd/string))
+(def XSD-INTEGER (known-types :xsd/integer))
+(def XSD-LONG (known-types :xsd/long))
+(def XSD-FLOAT (known-types :xsd/float))
+(def XSD-DATE (known-types :xsd/date))
+(def XSD-QNAME (known-types :xsd/QName))
+(def XSD-BOOLEAN (known-types :xsd/boolean))
+(def XSD-ANYURI (known-types :xsd/anyURI))
 
 (defn as-str
   "Returns the string form of an IRI, not the serialization form.
@@ -159,7 +163,9 @@
   Object
   (toString [this]
     (if (and datatype (not= datatype XSD-STRING))
-      (str \" (print-escape value) "\"^^" datatype)
+      (str \" (print-escape value) "\"^^" (if (keyword? datatype)
+                                            (str (namespace datatype) \: (name datatype))
+                                            datatype))
       (str \" (print-escape value) \"))))
 
 (defrecord LangLiteral [value lang]
@@ -214,10 +220,13 @@
               (string? datatype) (->IRI datatype nil nil)
               #?(:clj (or (instance? URL datatype) (uri? datatype))
                  :cljs (uri? datatype)) (->IRI (str datatype) nil nil)
-              (keyword? datatype) datatype) ;; this is not ideal but provides flexibility
+              (keyword? datatype) (if (known-types datatype)
+                                    datatype
+                                    (throw (ex-info (str "Unknown datatype: " datatype)
+                                                    {:datatype datatype :value value})))
               :default (throw (ex-info (str (type datatype) " cannot be converted to an IRI")
-                                       {:value value :datatype datatype :type (type datatype)}))]
-   (->TypedLiteral value dt))))
+                                       {:value value :datatype datatype :type (type datatype)})))]
+     (->TypedLiteral value dt))))
 
 (defn to-clj
   "Converts an RDF Literal with a datatype into a native Clojure value"

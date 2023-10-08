@@ -22,7 +22,9 @@
 (deftest test-typed-literals
   (testing "do TypedLiterals serialize as expected"
     (is (= "\"test\"" (str (typed-literal "test"))))
-    (is (= "\"5\"^^xsd:double" (str (typed-literal "5" (iri "http://www.w3.org/2001/XMLSchema#double" "xsd" "double")))))
+    (is (= "\"5\"^^xsd:float" (str (typed-literal "5" (iri "http://www.w3.org/2001/XMLSchema#float" "xsd" "float")))))
+    (is (= "\"5\"^^xsd:float" (str (typed-literal "5" :xsd/float))))
+    (is (thrown? ExceptionInfo (typed-literal "5" 'int)))
     (is (= "\"test\"^^<http://test.com/MyType>"
            (str (typed-literal "test" (iri "http://test.com/MyType")))))
     (is (= "\"another\\ntest\"" (str (typed-literal "another\ntest"))))))
