@@ -122,7 +122,7 @@
                        {:prefix prefix :context context})))
      (->IRI (str nms local) prefix local))))
 
-(def xsd [:xsd/string :xsd/integer :xsd/long :xsd/float :xsd/date
+(def xsd [:xsd/string :xsd/integer :xsd/long :xsd/float :xsd/dateTime
           :xsd/QName :xsd/boolean :xsd/anyURI])
 
 (def known-types (reduce #(assoc %1 %2 (curie common-prefixes %2)) {} xsd))
@@ -131,7 +131,7 @@
 (def XSD-INTEGER (known-types :xsd/integer))
 (def XSD-LONG (known-types :xsd/long))
 (def XSD-FLOAT (known-types :xsd/float))
-(def XSD-DATE (known-types :xsd/date))
+(def XSD-DATETIME (known-types :xsd/dateTime))
 (def XSD-QNAME (known-types :xsd/QName))
 (def XSD-BOOLEAN (known-types :xsd/boolean))
 (def XSD-ANYURI (known-types :xsd/anyURI))
@@ -207,7 +207,7 @@
      (string? value) (->TypedLiteral value XSD-STRING)
      (int? value) (->TypedLiteral (str value) XSD-INTEGER)
      (float? value) (->TypedLiteral (str value) XSD-FLOAT)
-     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATE)
+     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATETIME)
      (keyword? value) (->TypedLiteral (str (namespace value) \: (name value)) XSD-QNAME)
      (boolean? value) (->TypedLiteral (str value) XSD-BOOLEAN)
      (uri? value) (->TypedLiteral (str value) XSD-ANYURI)
@@ -234,8 +234,8 @@
       "http://www.w3.org/2001/XMLSchema#string" value
       "http://www.w3.org/2001/XMLSchema#integer" (parse-long value)
       "http://www.w3.org/2001/XMLSchema#float" (parse-double value)
-      "http://www.w3.org/2001/XMLSchema#date" #?(:clj (inst/read-instant-timestamp value)
-                                                 :cljs (r/parse-timestamp value))
+      "http://www.w3.org/2001/XMLSchema#dateTime" #?(:clj (inst/read-instant-timestamp value)
+                                                     :cljs (r/parse-timestamp value))
       "http://www.w3.org/2001/XMLSchema#QName" (apply keyword (s/split value #":" 2))
       "http://www.w3.org/2001/XMLSchema#boolean" (parse-boolean value)
       "http://www.w3.org/2001/XMLSchema#anyURI" #?(:clj (URI. value)
