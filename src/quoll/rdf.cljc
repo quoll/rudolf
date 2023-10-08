@@ -213,7 +213,10 @@
               (instance? IRI datatype) datatype
               (string? datatype) (->IRI datatype nil nil)
               #?(:clj (or (instance? URL datatype) (uri? datatype))
-                 :cljs (uri? datatype)) (->IRI (str datatype) nil nil))]
+                 :cljs (uri? datatype)) (->IRI (str datatype) nil nil)
+              (keyword? datatype) datatype) ;; this is not ideal but provides flexibility
+              :default (throw (ex-info (str (type datatype) " cannot be converted to an IRI")
+                                       {:value value :datatype datatype :type (type datatype)}))]
    (->TypedLiteral value dt))))
 
 (defn to-clj
