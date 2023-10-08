@@ -220,10 +220,7 @@
               (string? datatype) (->IRI datatype nil nil)
               #?(:clj (or (instance? URL datatype) (uri? datatype))
                  :cljs (uri? datatype)) (->IRI (str datatype) nil nil)
-              (keyword? datatype) (if (known-types datatype)
-                                    datatype
-                                    (throw (ex-info (str "Unknown datatype: " datatype)
-                                                    {:datatype datatype :value value})))
+              (keyword? datatype) (or (known-types datatype) datatype)  ;; messy, but expedient
               :default (throw (ex-info (str (type datatype) " cannot be converted to an IRI")
                                        {:value value :datatype datatype :type (type datatype)})))]
      (->TypedLiteral value dt))))
