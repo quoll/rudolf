@@ -177,6 +177,8 @@
   [value lang]
   (->LangLiteral value lang))
 
+(def RDF-LANGSTRING (curie common-prefixes :rdf/langString))
+
 #?(:clj
    (defn- inst-str
      [i]
@@ -222,7 +224,10 @@
               (keyword? datatype) (or (known-types datatype) datatype)  ;; messy, but expedient
               :default (throw (ex-info (str (type datatype) " cannot be converted to an IRI")
                                        {:value value :datatype datatype :type (type datatype)})))]
-     (->TypedLiteral value dt))))
+     (when (= dt RDF-LANGSTRING)
+       (throw (ex-info "Instances of rdf:langString require a language tag. Use lang-literal instead."
+                       {:value value :datatype dt})))
+     (->TypedLiteral (str value) dt))))
 
 (defn to-clj
   "Converts an RDF Literal with a datatype into a native Clojure value"
@@ -246,7 +251,7 @@
   (toString [this]
     (str "_:" id)))
 
-(let [counter (atom 0)]
+(let [counter (atom -1)]
   (def ^:private labelled-blank-node
     (memoize (fn [label] (->BlankNode (str \b (swap! counter inc))))))
 
@@ -254,13 +259,15 @@
     "Create a blank node, using an optional label. The same label will always return the same blank node."
     ([] (->BlankNode (str \b (swap! counter inc))))
     ([label]
-     (labelled-blank-node (if (s/starts-with? label "_:") (subs label 2) label)))))
+     (let [lbl (str label)]
+       (labelled-blank-node (if (s/starts-with? lbl "_:") (subs lbl 2) lbl))))))
 
 (defn unsafe-blank-node
   "Return a new blank node object for a provided label. Reuse of a label *will* return a new blank node.
   This is for code that needs to manage its own blank node allocation."
   [label]
-  (->BlankNode (if (s/starts-with? label "_:") (subs label 2) label)))
+  (let [lbl (str label)]
+    (->BlankNode (if (s/starts-with? lbl "_:") (subs lbl 2) lbl))))
 
 #?(:clj
    (defmethod clojure.core/print-method quoll.rdf.IRI [o, ^Writer w]
