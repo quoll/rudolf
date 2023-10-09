@@ -16,10 +16,13 @@ RDF is about data portability, meaning that lots of applications need to represe
 whether they are parsing, writing, storing, or querying data. While there are some common ways of
 representing this data, each different program often ends up using its own internal objects, records,
 interfaces, protocols, modules, etc.
+<img src="https://github.com/quoll/rudolf/assets/358875/348bdfaf-a82c-45c4-b2dc-82a153a8b162" alt="RuDolF" align="right"/>
 
-A common form used in the Java landscape is Jena's [RDFDatatypes](https://github.com/apache/jena/blob/main/jena-core/src/main/java/org/apache/jena/datatypes/RDFDatatype.java). While relatively general purpose, these are
-focused on Jena's requirements, which are not always applicable to other applications. They are also part of
-Java, making them less useful when writing code that is cross-compatible for ClojureScript applications.
+A common form used in the Java landscape is Jena's
+[RDFDatatypes](https://github.com/apache/jena/blob/main/jena-core/src/main/java/org/apache/jena/datatypes/RDFDatatype.java).
+While relatively general purpose, these are focused on Jena's requirements, which are not always applicable
+to other applications. They are also part of Java, making them less useful when writing code that is
+cross-compatible for ClojureScript applications.
 
 This package is simply a standard set of records that can be used across Clojure and ClojureScript applications.
 
@@ -29,11 +32,32 @@ into a string form that is suitable for [Turtle](https://www.w3.org/TR/turtle/),
 
 ### Types
 RDF describes a [graph](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) that uses nodes of 3 types:
-- IRI
-- Literal
-- Blank Node
+- [IRI](#iri)
+- [Literal](#literal)
+- [Blank Node](#blank-nodes)
 
 These types are all described below, along with the semantics of using them.
+
+## Contents
+- [IRIs](#iri)
+  * [IRI Context](#iri-context)
+  * [IRI Representation](#iri-representation)
+  * [IRI Construction](#iri-construction)
+  * [Working with IRIs](#working-with-iris)
+- [Literals](#literals)
+  * [Literal Representation](#literal-representation)
+    - [Language-Tagged Literal Representation](#language-tagged-literal-representation)
+    - [Typed Literal Representation](#typed-literal-representation)
+  * [Literal Construction](#literal-construction)
+  * [Working with Literals](#working-with-literals)
+    - [Language-Tagged Literals](#language-tagged-literals)
+    - [Typed Literals](#typed-literals)
+- [Blank Nodes](#blank-nodes)
+  * [Blank Node Representation](#blank-node-representation)
+  * [Blank Node Construction](#blank-node-construction)
+  * [Working with Blank Nodes](#working-with-blank-nodes)
+- [Examples](#examples)
+- [TO DO](#todo)
 
 ## IRI
 IRIs are used as labeled nodes in an RDF graph.
@@ -128,7 +152,7 @@ To get the raw IRI form, use the `as-str` function.
 
 IRIs with the same absolute form will always compare as equal, even if the prefix/local values differ.
 
-## Literal
+## Literals
 Literals are of 2 types: Language-tagged Literals, and Typed Literals. In both cases, they hold a pair of values.
 
 A Language-tagged Literal is a string, with a [language tag](https://www.rfc-editor.org/rfc/rfc5646)
