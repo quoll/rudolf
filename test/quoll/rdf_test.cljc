@@ -43,7 +43,9 @@
 (deftest test-typed-literals
   (testing "do TypedLiterals serialize as expected"
     (is (= "\"test\"" (str (typed-literal "test"))))
-    (is (= "\"5\"^^xsd:double" (str (typed-literal "5" (iri "http://www.w3.org/2001/XMLSchema#double" "xsd" "double")))))
+    (is (= "\"5\"^^xsd:float" (str (typed-literal "5" (iri "http://www.w3.org/2001/XMLSchema#float" "xsd" "float")))))
+    (is (= "\"5\"^^xsd:float" (str (typed-literal "5" :xsd/float))))
+    (is (thrown? ExceptionInfo (typed-literal "5" 'int)))
     (is (= "\"test\"^^<http://test.com/MyType>"
            (str (typed-literal "test" (iri "http://test.com/MyType")))))
     (is (= "\"another\\ntest\"" (str (typed-literal "another\ntest"))))))
@@ -75,7 +77,7 @@
     (is (= (typed-literal "x" r/XSD-STRING) (typed-literal "x")))
     (is (= (typed-literal "5" r/XSD-INTEGER) (typed-literal 5)))
     (is (= (typed-literal "2.5" r/XSD-FLOAT) (typed-literal 2.5)))
-    (is (= (typed-literal "2023-10-01T21:54:06.349-00:00" r/XSD-DATE)
+    (is (= (typed-literal "2023-10-01T21:54:06.349-00:00" r/XSD-DATETIME)
            (typed-literal #inst "2023-10-01T21:54:06.349-00:00")))
     (is (= (typed-literal "prefix:local" r/XSD-QNAME) (typed-literal :prefix/local)))
     (is (= (typed-literal "true" r/XSD-BOOLEAN) (typed-literal true)))
@@ -87,7 +89,7 @@
     (is (= 5 (to-clj (typed-literal "5" r/XSD-INTEGER))))
     (is (= 2.5 (to-clj (typed-literal "2.5" r/XSD-FLOAT))))
     (is (= #inst "2023-10-01T21:54:06.349-00:00"
-           (to-clj (typed-literal "2023-10-01T21:54:06.349-00:00" r/XSD-DATE))))
+           (to-clj (typed-literal "2023-10-01T21:54:06.349-00:00" r/XSD-DATETIME))))
     (is (= :prefix/local (to-clj (typed-literal "prefix:local" r/XSD-QNAME))))
     (is (= true (to-clj (typed-literal "true" r/XSD-BOOLEAN))))
     #?(:clj (is (= (uri "http://test.org/") (to-clj (typed-literal "http://test.org/" r/XSD-ANYURI))))

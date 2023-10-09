@@ -113,13 +113,7 @@
   or else a context map containing the prefix must be provided."
   ([kw] (curie common-prefixes kw))
   ([context kw]
-   (let [prefix-name (namespace kw)
-         pref (cond-> prefix-name seq keyword)
-         nms (get-namespace context pref)]
-     (when-not nms
-       (throw (ex-info (str "Namespace for " prefix-name " must be provided in the context")
-                       {:prefix pref :context context})))
-     (->IRI (str nms (name kw)) prefix-name (name kw))))
+   (curie context (namespace kw) (name kw)))
   ([context prefix local]
    (let [nms (get-namespace context prefix)]
      (when-not nms
@@ -127,15 +121,19 @@
                        {:prefix prefix :context context})))
      (->IRI (str nms local) prefix local))))
 
+(def xsd [:xsd/string :xsd/integer :xsd/long :xsd/float :xsd/dateTime
+          :xsd/QName :xsd/boolean :xsd/anyURI])
 
-(def XSD-STRING (curie common-prefixes :xsd/string))
-(def XSD-INTEGER (curie common-prefixes :xsd/integer))
-(def XSD-LONG (curie common-prefixes :xsd/long))
-(def XSD-FLOAT (curie common-prefixes :xsd/float))
-(def XSD-DATE (curie common-prefixes :xsd/date))
-(def XSD-QNAME (curie common-prefixes :xsd/QName))
-(def XSD-BOOLEAN (curie common-prefixes :xsd/boolean))
-(def XSD-ANYURI (curie common-prefixes :xsd/anyURI))
+(def known-types (reduce #(assoc %1 %2 (curie common-prefixes %2)) {} xsd))
+
+(def XSD-STRING (known-types :xsd/string))
+(def XSD-INTEGER (known-types :xsd/integer))
+(def XSD-LONG (known-types :xsd/long))
+(def XSD-FLOAT (known-types :xsd/float))
+(def XSD-DATETIME (known-types :xsd/dateTime))
+(def XSD-QNAME (known-types :xsd/QName))
+(def XSD-BOOLEAN (known-types :xsd/boolean))
+(def XSD-ANYURI (known-types :xsd/anyURI))
 
 (defn as-str
   "Returns the string form of an IRI, not the serialization form.
@@ -164,7 +162,9 @@
   Object
   (toString [this]
     (if (and datatype (not= datatype XSD-STRING))
-      (str \" (print-escape value) "\"^^" datatype)
+      (str \" (print-escape value) "\"^^" (if (keyword? datatype)
+                                            (str (namespace datatype) \: (name datatype))
+                                            datatype))
       (str \" (print-escape value) \"))))
 
 (defrecord LangLiteral [value lang]
@@ -206,7 +206,7 @@
      (string? value) (->TypedLiteral value XSD-STRING)
      (int? value) (->TypedLiteral (str value) XSD-INTEGER)
      (float? value) (->TypedLiteral (str value) XSD-FLOAT)
-     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATE)
+     (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATETIME)
      (keyword? value) (->TypedLiteral (str (namespace value) \: (name value)) XSD-QNAME)
      (boolean? value) (->TypedLiteral (str value) XSD-BOOLEAN)
      (uri? value) (->TypedLiteral (str value) XSD-ANYURI)
@@ -218,8 +218,11 @@
               (instance? IRI datatype) datatype
               (string? datatype) (->IRI datatype nil nil)
               #?(:clj (or (instance? URL datatype) (uri? datatype))
-                 :cljs (uri? datatype)) (->IRI (str datatype) nil nil))]
-   (->TypedLiteral value dt))))
+                 :cljs (uri? datatype)) (->IRI (str datatype) nil nil)
+              (keyword? datatype) (or (known-types datatype) datatype)  ;; messy, but expedient
+              :default (throw (ex-info (str (type datatype) " cannot be converted to an IRI")
+                                       {:value value :datatype datatype :type (type datatype)})))]
+     (->TypedLiteral value dt))))
 
 (defn to-clj
   "Converts an RDF Literal with a datatype into a native Clojure value"
@@ -230,8 +233,8 @@
       "http://www.w3.org/2001/XMLSchema#string" value
       "http://www.w3.org/2001/XMLSchema#integer" (parse-long value)
       "http://www.w3.org/2001/XMLSchema#float" (parse-double value)
-      "http://www.w3.org/2001/XMLSchema#date" #?(:clj (inst/read-instant-timestamp value)
-                                                 :cljs (r/parse-timestamp value))
+      "http://www.w3.org/2001/XMLSchema#dateTime" #?(:clj (inst/read-instant-timestamp value)
+                                                     :cljs (r/parse-timestamp value))
       "http://www.w3.org/2001/XMLSchema#QName" (apply keyword (s/split value #":" 2))
       "http://www.w3.org/2001/XMLSchema#boolean" (parse-boolean value)
       "http://www.w3.org/2001/XMLSchema#anyURI" #?(:clj (URI. value)
