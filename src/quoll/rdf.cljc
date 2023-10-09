@@ -77,6 +77,14 @@
      (-pr-writer [this writer opts]
        (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))))
 
+(defn- get-namespace
+  "Gets the namespace associated with a prefix from a context"
+  [context prefix]
+  (if (and prefix (or (and (keyword? prefix) (seq (name prefix)))
+                      (and (string? prefix) (seq prefix))))
+    (get context (keyword prefix))
+    (or (get context :_default) (get context "") (get context nil) (get context (keyword "")))))
+
 (defn iri
   "Create an iri. If no prefix/namespace is available, then the prefix and local values may be nil.
   The full form of the IRI must always be available.
@@ -91,10 +99,8 @@
    (iri i (namespace kw) (name kw)))
   ([i p l]
    (if (map? i)
-     (if-let [nms (if p
-                    (get i (keyword p))
-                    (or (get i "") (get i nil) (get i (keyword ""))))]
-       (->IRI (str nms l) p l)
+     (if-let [nms (get-namespace i p)]
+       (->IRI (str nms l) (if (keyword? p) (name p) p) l)
        (throw (ex-info (str "Prefix '" p "' not found in context") {:context i :prefix p :local l})))
      (let [i (str i)]
        (if (s/ends-with? i l)
@@ -107,18 +113,17 @@
   or else a context map containing the prefix must be provided."
   ([kw] (curie common-prefixes kw))
   ([context kw]
-   (let [pref (keyword (namespace kw))
-         prefix (or pref :default)
-         nms (get context prefix)]
+   (let [prefix-name (namespace kw)
+         pref (cond-> prefix-name seq keyword)
+         nms (get-namespace context pref)]
+     (when-not nms
+       (throw (ex-info (str "Namespace for " prefix-name " must be provided in the context")
+                       {:prefix pref :context context})))
+     (->IRI (str nms (name kw)) prefix-name (name kw))))
+  ([context prefix local]
+   (let [nms (get-namespace context prefix)]
      (when-not nms
        (throw (ex-info (str "Namespace for " prefix " must be provided in the context")
-                       {:prefix pref :context context})))
-     (->IRI (str nms (name kw)) pref (name kw))))
-  ([context prefix local]
-   (let [pfx (or prefix :default)
-         nms (get context pfx)]
-     (when-not nms
-       (throw (ex-info (str "Namespace for " pfx " must be provided in the context")
                        {:prefix prefix :context context})))
      (->IRI (str nms local) prefix local))))
 

@@ -17,7 +17,28 @@
     (is (thrown? ExceptionInfo (iri "http://test.com/locals" "tst" "local")))
     (is (= "tst:local" (str (iri "http://test.com/local" :tst/local))))
     (is (= "tst:local" (str (iri {:tst "http://test.com/"} :tst/local))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" nil "http://test.org/"} :local))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" "" "http://test.org/"} :local))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" (keyword "") "http://test.org/"} :local))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" :_default "http://test.org/"} :local))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" nil "http://test.org/"} nil "local"))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" "" "http://test.org/"} nil "local"))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" (keyword "") "http://test.org/"} "" "local"))))
+    (is (= ":local" (str (iri {:tst "http://test.com/" :_default "http://test.org/"} "" "local"))))
     (is (= "http://test.com/local" (as-str (iri {:tst "http://test.com/"} :tst/local))))))
+
+(deftest test-iri-context
+  (testing "do IRIs contexts resolve"
+    (is (= "http://test.com/local" (as-str (iri "http://test.com/local" :tst/local))))
+    (is (= "http://test.com/local" (as-str (iri {:tst "http://test.com/"} :tst/local))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" nil "http://test.org/"} :local))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" "" "http://test.org/"} :local))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" (keyword "") "http://test.org/"} :local))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" :_default "http://test.org/"} :local))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" nil "http://test.org/"} nil "local"))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" "" "http://test.org/"} nil "local"))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" (keyword "") "http://test.org/"} "" "local"))))
+    (is (= "http://test.org/local" (as-str (iri {:tst "http://test.com/" :_default "http://test.org/"} "" "local"))))))
 
 (deftest test-typed-literals
   (testing "do TypedLiterals serialize as expected"
