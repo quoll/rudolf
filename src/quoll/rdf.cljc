@@ -21,6 +21,9 @@
 
 (def ^:private magic 314159)
 
+(defprotocol Node
+  (get-type [this] "Returns a keyword indicating the type of the node."))
+
 #?(:clj
    (deftype IRI [iri prefix local]
      #?(:clj Object :cljs object)
@@ -42,7 +45,10 @@
                                  :local local
                                  not-found))
      IHashEq
-     (hasheq [this] (+ magic (hash iri))))
+     (hasheq [this] (+ magic (hash iri)))
+     
+     Node
+     (get-type [this] :iri))
 
    :cljs
    (deftype IRI [iri prefix local]
@@ -75,7 +81,10 @@
                                    not-found))
      IPrintWithWriter
      (-pr-writer [this writer opts]
-       (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))))
+       (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))
+     
+     Node
+     (get-type [this] :iri)))
 
 (defn- get-namespace
   "Gets the namespace associated with a prefix from a context"
@@ -165,12 +174,18 @@
       (str \" (print-escape value) "\"^^" (if (keyword? datatype)
                                             (str (namespace datatype) \: (name datatype))
                                             datatype))
-      (str \" (print-escape value) \"))))
+      (str \" (print-escape value) \")))
+  
+  Node
+  (get-type [this] :typed-literal))
 
 (defrecord LangLiteral [value lang]
   Object
   (toString [this]
-    (str \" (print-escape value) "\"@" lang)))
+    (str \" (print-escape value) "\"@" lang))
+  
+  Node
+  (get-type [this] :lang-literal))
 
 (defn lang-literal
   "Create a language coded literal. e.g. 'data'@en"
@@ -249,7 +264,10 @@
 (defrecord BlankNode [id]
   Object
   (toString [this]
-    (str "_:" id)))
+    (str "_:" id))
+  
+  Node
+  (get-type [this] :blank))
 
 (let [counter (atom -1)]
   (def ^:private labelled-blank-node

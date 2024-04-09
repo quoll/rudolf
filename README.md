@@ -4,11 +4,11 @@ RDF datatypes.
 ## Usage
 ### Leiningen/Boot
 ```clojure
-[org.clojars.quoll/rudolf "0.1.8"]
+[org.clojars.quoll/rudolf "0.2.0"]
 ```
 ### Clojure CLI/deps.edn
 ```clojure
-org.clojars.quoll/rudolf {:mvn/version "0.1.8"}
+org.clojars.quoll/rudolf {:mvn/version "0.2.0"}
 ```
 
 ## Rationale
@@ -319,12 +319,28 @@ When serializing, blank nodes are always represented as `_:id`. This can be seen
 (typed-literal "5" (curie rdf/common-prefixes :xsd/integer))
 ```
 
+## Nodes
+All of the above types also implement the `Node` protocol. This is a simple protocol
+with only a single function: `get-type`
+This `get-type` function returns a keyword, which may be better for determining type
+than calling `instance?` or reflection. All of the expressions below return `true`:
+
+```clojure
+(:require '[quoll.rdf as rdf :refer [iri curie lang-literal typed-literal]])
+
+(= (get-type (iri "http://test.com/")) :iri)
+(= (get-type (lang-literal "test" "en")) :lang-literal)
+(= (get-type (typed-literal "literal")) :typed-literal)
+(= (get-type (blank-node)) :blank)
+```
+
+
 ## TODO
 - Extend to Jena's interfaces.
 
 ## License
 
-Copyright © 2023 Paula Gearon
+Copyright © 2024 Paula Gearon
 
 Distributed under the Eclipse Public License version 2.0.
 
