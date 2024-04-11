@@ -22,11 +22,26 @@
 (def ^:private magic 314159)
 
 (defprotocol Node
-  (get-type [this] "Returns a keyword indicating the type of the node."))
+  (get-type [this] "Returns a keyword indicating the type of the node.")
+  (iri? [this] "Returns true if the node is an iri")
+  (literal? [this] "Returns true if the node is a literal")
+  (typed-literal? [this] "Returns true if the node is a typed literal")
+  (lang-literal? [this] "Returns true if the node is a language coded literal")
+  (blank? [this] "Returns true if the node is a blank node"))
+
+(extend-protocol Node
+  #?(:clj Object :cljs object)
+  (get-type [this] :unknown)
+  (iri? [this] false)
+  (literal? [this] false)
+  (typed-literal? [this] false)
+  (lang-literal? [this] false)
+  (blank? [this] false))
+ 
 
 #?(:clj
    (deftype IRI [iri prefix local]
-     #?(:clj Object :cljs object)
+     Object
      (toString [this]
        (if local
          (if prefix (str prefix \: local) (str \: local))
@@ -48,7 +63,12 @@
      (hasheq [this] (+ magic (hash iri)))
      
      Node
-     (get-type [this] :iri))
+     (get-type [this] :iri)
+     (iri? [this] true)
+     (literal? [this] false)
+     (typed-literal? [this] false)
+     (lang-literal? [this] false)
+     (blank? [this] false))
 
    :cljs
    (deftype IRI [iri prefix local]
@@ -84,7 +104,12 @@
        (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))
      
      Node
-     (get-type [this] :iri)))
+     (get-type [this] :iri)
+     (iri? [this] false)
+     (literal? [this] false)
+     (typed-literal? [this] false)
+     (lang-literal? [this] false)
+     (blank? [this] false)))
 
 (defn- get-namespace
   "Gets the namespace associated with a prefix from a context"
@@ -177,7 +202,12 @@
       (str \" (print-escape value) \")))
   
   Node
-  (get-type [this] :typed-literal))
+  (get-type [this] :typed-literal)
+  (iri? [this] false)
+  (literal? [this] true)
+  (typed-literal? [this] true)
+  (lang-literal? [this] false)
+  (blank? [this] false))
 
 (defrecord LangLiteral [value lang]
   Object
@@ -185,7 +215,12 @@
     (str \" (print-escape value) "\"@" lang))
   
   Node
-  (get-type [this] :lang-literal))
+  (get-type [this] :lang-literal)
+  (iri? [this] false)
+  (literal? [this] true)
+  (typed-literal? [this] false)
+  (lang-literal? [this] true)
+  (blank? [this] false))
 
 (defn lang-literal
   "Create a language coded literal. e.g. 'data'@en"
@@ -267,7 +302,12 @@
     (str "_:" id))
   
   Node
-  (get-type [this] :blank))
+  (get-type [this] :blank)
+  (iri? [this] false)
+  (literal? [this] false)
+  (typed-literal? [this] false)
+  (lang-literal? [this] false)
+  (blank? [this] true))
 
 (let [counter (atom -1)]
   (def ^:private labelled-blank-node
@@ -307,4 +347,8 @@
 (def RDF-FIRST (curie common-prefixes :rdf/first))
 (def RDF-REST (curie common-prefixes :rdf/rest))
 (def RDF-NIL (curie common-prefixes :rdf/nil))
-
+;; useful aliases
+(def TYPE RDF-TYPE)
+(def FIRST RDF-FIRST)
+(def REST RDF-REST)
+(def NIL RDF-NIL)

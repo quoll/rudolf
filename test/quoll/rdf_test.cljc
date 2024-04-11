@@ -2,7 +2,9 @@
   (:require [clojure.test :refer [testing is deftest]]
             [clojure.string :as s]
             [quoll.rdf :as r :refer [iri as-str lang-literal typed-literal
-                                     blank-node unsafe-blank-node to-clj]])
+                                     blank-node unsafe-blank-node to-clj
+                                     get-type iri? literal? typed-literal?
+                                     lang-literal? blank?]])
   #?(:clj (:import [java.net URI]
                    [clojure.lang ExceptionInfo])))
 
@@ -94,5 +96,50 @@
     (is (= true (to-clj (typed-literal "true" r/XSD-BOOLEAN))))
     #?(:clj (is (= (uri "http://test.org/") (to-clj (typed-literal "http://test.org/" r/XSD-ANYURI))))
        :cljs (is (= (str (uri "http://test.org/")) (str (to-clj (typed-literal "http://test.org/" r/XSD-ANYURI))))))))
+
+(deftest test-nodes
+  (testing "Do nodes behave as expected")
+    (let [i (iri "http://example.org/")
+          tl (typed-literal "typed literal")
+          ll (lang-literal "lang literal" "en")
+          b (blank-node)
+          o "String object"
+          l "Long object"]
+      (is (= :iri (get-type i)))
+      (is (= :typed-literal (get-type tl)))
+      (is (= :lang-literal (get-type ll)))
+      (is (= :blank (get-type b)))
+      (is (= :unknown (get-type o)))
+      (is (= :unknown (get-type l)))
+      (is (iri? i))
+      (is (not (iri? tl)))
+      (is (not (iri? ll)))
+      (is (not (iri? b)))
+      (is (not (iri? o)))
+      (is (not (iri? l)))
+      (is (not (literal? i)))
+      (is (literal? tl))
+      (is (literal? ll))
+      (is (not (literal? b)))
+      (is (not (literal? o)))
+      (is (not (literal? l)))
+      (is (not (typed-literal? i)))
+      (is (typed-literal? tl))
+      (is (not (typed-literal? ll)))
+      (is (not (typed-literal? b)))
+      (is (not (typed-literal? o)))
+      (is (not (typed-literal? l)))
+      (is (not (lang-literal? i)))
+      (is (not (lang-literal? tl)))
+      (is (lang-literal? ll))
+      (is (not (lang-literal? b)))
+      (is (not (lang-literal? o)))
+      (is (not (lang-literal? l)))
+      (is (not (blank? i)))
+      (is (not (blank? tl)))
+      (is (not (blank? ll)))
+      (is (blank? b))
+      (is (not (blank? o)))
+      (is (not (blank? l)))))
 
 #?(:cljs (cljs.test/run-tests))
