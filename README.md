@@ -4,11 +4,11 @@ RDF datatypes.
 ## Usage
 ### Leiningen/Boot
 ```clojure
-[org.clojars.quoll/rudolf "0.2.0"]
+[org.clojars.quoll/rudolf "0.2.1"]
 ```
 ### Clojure CLI/deps.edn
 ```clojure
-org.clojars.quoll/rudolf {:mvn/version "0.2.0"}
+org.clojars.quoll/rudolf {:mvn/version "0.2.1"}
 ```
 
 ## Rationale
