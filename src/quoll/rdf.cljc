@@ -30,7 +30,7 @@
   (blank? [this] "Returns true if the node is a blank node"))
 
 (extend-protocol Node
-  #?(:clj Object :cljs object)
+  #?(:clj Object :cljs default)
   (get-type [this] :unknown)
   (iri? [this] false)
   (literal? [this] false)
@@ -105,7 +105,7 @@
      
      Node
      (get-type [this] :iri)
-     (iri? [this] false)
+     (iri? [this] true)
      (literal? [this] false)
      (typed-literal? [this] false)
      (lang-literal? [this] false)
