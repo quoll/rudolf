@@ -251,6 +251,9 @@
         (normalize (.getUTCSeconds i) 2)      "."
         (normalize (.getUTCMilliseconds i) 3) "-00:00"))))
 
+(def ^:private RDF-FALSE (->TypedLiteral "false" XSD-BOOLEAN))
+(def ^:private RDF-TRUE (->TypedLiteral "true" XSD-BOOLEAN))
+
 (defn typed-literal
   "Converts a Clojure value into an RDF Literal. The datatype will be inferred if none is available."
   ([value]
@@ -260,7 +263,7 @@
      (float? value) (->TypedLiteral (str value) XSD-FLOAT)
      (instance? #?(:clj Date :cljs js/Date) value) (->TypedLiteral (inst-str value) XSD-DATETIME)
      (keyword? value) (->TypedLiteral (str (namespace value) \: (name value)) XSD-QNAME)
-     (boolean? value) (->TypedLiteral (str value) XSD-BOOLEAN)
+     (boolean? value) (if value RDF-TRUE RDF-FALSE)
      (uri? value) (->TypedLiteral (str value) XSD-ANYURI)
      #?@(:clj [(instance? URL value) (->TypedLiteral (str value) XSD-ANYURI)])
      :default (throw (ex-info (str "Unknown datatype for typed literal: " (type value))
