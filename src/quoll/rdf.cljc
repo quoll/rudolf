@@ -38,6 +38,7 @@
   (lang-literal? [this] false)
   (blank? [this] false))
  
+(def iri-keys #{:iri :prefix :local})
 
 #?(:clj
    (deftype IRI [iri prefix local]
@@ -52,6 +53,14 @@
      (equiv [this other]
        (and (= (class this) (class other))
             (= iri (.iri other))))
+     (seq [this]
+       (list [:iri iri] [:prefix prefix] [:local local]))
+     (count [this] 3)
+     (cons [this o]
+       (if (and (vector? o) (= 2 (count o)))
+         (.assoc this (nth o 0) (nth o 1))
+         (reduce conj this o)))
+     (empty [this] (IRI. nil nil nil))
      IPersistentMap
      (valAt [this k] (.valAt this k nil))
      (valAt [this k not-found] (case k
@@ -59,9 +68,25 @@
                                  :prefix prefix
                                  :local local
                                  not-found))
+     (assoc [this key val]
+       (case key
+         :iri (IRI. val prefix local)
+         :prefix (IRI. iri val local)
+         :local (IRI. iri prefix val)
+         (throw (ex-info "IRIs contain only [iri, prefix, local]" (into {:exception "Cannot expand IRIs"} this)))))
+     (assocEx [this key val] (assoc this key val))
+     (without [this key]
+       (if (contains? iri-keys key)
+         (throw (ex-info "Unsupported operation. IRIs must contain [iri, prefix, local]"
+                         (into {:exception "Cannot remove fields"} this)))
+         this))
+     (forEach [this action] (.forEach (into {} this) action))
+     (iterator [this] (.iterator (into {} (filter second (.seq this)))))
+     (containsKey [this key] (contains? iri-keys key))
+     (entryAt [this key] (.valAt this key))
      IHashEq
      (hasheq [this] (+ magic (hash iri)))
-     
+
      Node
      (get-type [this] :iri)
      (iri? [this] true)
@@ -91,7 +116,8 @@
          :iri (IRI. v prefix local)
          :prefix (IRI. iri v local)
          :local (IRI. iri prefix v)
-         this))
+         (throw (ex-info "IRIs contain only [iri, prefix, local]" (into {:exception "Cannot expand IRIs"} this)))))
+     (-contains-key? [this k] (contains? iri-keys k))
      ILookup
      (-lookup [this k] (-lookup this k nil))
      (-lookup [this k not-found] (case k
@@ -99,10 +125,25 @@
                                    :prefix prefix
                                    :local local
                                    not-found))
+     IMap
+     (-dissoc [this k]
+       (if (contains? iri-keys k)
+         (throw (ex-info "Unsupported operation. IRIs must contain [iri, prefix, local]"
+                         (into {:exception "Cannot remove fields"} this)))
+         this))
+     ISeqable
+     (-seq [this] (list [:iri iri] [:prefix prefix] [:local local]))
+     ICollection
+     (-conj [this o]
+       (if (and (vector? o) (= 2 (count o)))
+         (-assoc this (nth o 0) (nth o 1))
+         (reduce conj this o)))
+     IEmptyableCollection
+     (-empty [this] (IRI. nil nil nil))
      IPrintWithWriter
      (-pr-writer [this writer opts]
        (print-map {:iri iri :prefix prefix :local local} pr-writer writer opts))
-     
+
      Node
      (get-type [this] :iri)
      (iri? [this] true)

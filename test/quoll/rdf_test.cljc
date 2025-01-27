@@ -27,7 +27,23 @@
     (is (= ":local" (str (iri {:tst "http://test.com/" "" "http://test.org/"} nil "local"))))
     (is (= ":local" (str (iri {:tst "http://test.com/" (keyword "") "http://test.org/"} "" "local"))))
     (is (= ":local" (str (iri {:tst "http://test.com/" :_default "http://test.org/"} "" "local"))))
-    (is (= "http://test.com/local" (as-str (iri {:tst "http://test.com/"} :tst/local))))))
+    (is (= "http://test.com/local" (as-str (iri {:tst "http://test.com/"} :tst/local)))))
+  (testing "do IRIs behave as restricted maps"
+    (let [i (iri {:tst "http://test.com/"} :tst/local)
+          i2 (iri "http://test.com/local")]
+      (is (= [[:iri "http://test.com/local"] [:prefix "tst"] [:local "local"]] (seq i)))
+      (is (= [[:iri "http://test.com/local"] [:prefix nil] [:local nil]] (seq i2)))
+      (is (= 3 (count i)))
+      (is (= 3 (count i2)))
+      (is (= (iri "https://test.com/local" "tst" "local") (conj i [:iri "https://test.com/local"])))
+      (is (thrown? ExceptionInfo (conj i [:uri "http://test.com/local"])))
+      (is (= (iri "https://test.com/local" "tst" "local") (assoc i :iri "https://test.com/local")))
+      (is (thrown? ExceptionInfo (assoc i :uri "http://test.com/local")))
+      (is (thrown? ExceptionInfo (dissoc i :iri)))
+      (is (= i (dissoc i :uri)))
+      (is (= (r/->IRI nil nil nil) (empty i)))
+      (is (contains? i :iri))
+      (is (not (contains? i :uri))))))
 
 (deftest test-iri-context
   (testing "do IRIs contexts resolve"
