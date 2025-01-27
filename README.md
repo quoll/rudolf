@@ -340,7 +340,7 @@ than calling `instance?` or reflection. All of the expressions below return `tru
 
 ## License
 
-Copyright © 2024 Paula Gearon
+Copyright © 2023-2025 Paula Gearon
 
 Distributed under the Eclipse Public License version 2.0.
 
